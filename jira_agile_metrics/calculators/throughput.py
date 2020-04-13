@@ -2,6 +2,7 @@ import logging
 import pandas as pd
 import matplotlib.pyplot as plt
 import statsmodels.formula.api as sm
+from plotnine import *
 
 from ..calculator import Calculator
 from ..utils import get_extension, set_chart_style
@@ -102,6 +103,29 @@ class ThroughputCalculator(Calculator):
         logger.info("Writing throughput chart to %s", output_file)
         fig.savefig(output_file, bbox_inches='tight', dpi=300)
         plt.close(fig)
+
+        #  plotnine
+        p = ggplot(chart_data, aes(x='chart_data.index', y='count')) \
+          + xlab("Period starting") \
+          + ylab("Number of items") \
+          + geom_point(color="blue") \
+          + geom_line(color="blue") \
+          + stat_smooth(method='lm', color="orange", linetype="dashed") \
+          + scale_alpha_identity() \
+          + theme(axis_text_x = element_text(angle = 90)) \
+          + ggtitle("Throughput")
+
+        for x, y in zip(chart_data.index, chart_data['count']):
+            if y == 0:
+                continue
+            p = p + annotate(
+              "text",
+              label="%.0f" % y,
+              x=x,
+              y=y + 0.4,
+            )
+
+        p.save(filename="throughput-plotnine.png", dpi=300)
 
 def calculate_throughput(cycle_data, frequency, window=None):
     if len(cycle_data.index) == 0:
